@@ -6,7 +6,7 @@ function App() {
   // giving this useState a type of generics (array of strings) so that it doesn't complain
   const [messages, setMessages] = useState<string[]>(["hi"]);
 
-  const textRef = useRef();
+  const socketRef = useRef();
 
   useEffect(() => {
     const ws = new WebSocket("ws://localhost:8080")
@@ -14,11 +14,31 @@ function App() {
     ws.onmessage = (ev) =>{
       setMessages(m => [...m, ev.data])
     }
+    socketRef.current = ws;
+
+    ws.onopen = () =>{
+      ws.send(JSON.stringify({
+        type: "Join",
+        payload: {
+          roomId: "red"
+        }
+      }))
+    }
+
+    return () =>{
+      ws.close()
+    };
   }, [])
 
   function sendMessage(){
-    
-    ws.send("")
+    const message = document.getElementById("message")?.value;
+    socketRef.current.send(JSON.stringify({
+      type: "chat",
+      payload: {
+        message: message
+      }
+    })
+  )
   }
 
   return (
@@ -34,8 +54,8 @@ function App() {
         </div>
 
         <div className= "bg-white h-[10vh] flex justify-between m-2 rounded-xl">
-          <input type="text" placeholder="  send message" className=" m-2 w-full position-relative "/>
-          <button className="bg-black text-white rounded-xl m-2 p-1 position-relative h-[6vh] " onClick={sendMessage} ref={textRef}>Send</button>
+          <input type="text" placeholder="  send message" className=" m-2 w-full position-relative " id="message"/>
+          <button className="bg-black text-white rounded-xl m-2 p-1 position-relative h-[6vh] " onClick={sendMessage}>Send</button>
         </div>
 
 
